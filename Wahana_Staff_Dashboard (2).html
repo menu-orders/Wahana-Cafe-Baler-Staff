@@ -1,0 +1,597 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wahana Cafe Baler • Kitchen & Staff Command Desk</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cabinet+Grotesk:wght@700;800;900&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg-dark: #050d08;
+      --card-bg: rgba(14, 30, 20, 0.75);
+    }
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: var(--bg-dark);
+      color: #f3efe6;
+      background-image: 
+        radial-gradient(circle at 15% 15%, rgba(245, 158, 11, 0.04) 0%, transparent 45%),
+        radial-gradient(circle at 85% 85%, rgba(16, 185, 129, 0.04) 0%, transparent 45%);
+      background-attachment: fixed;
+    }
+    h1, h2, h3, h4, .font-heading {
+      font-family: 'Cabinet Grotesk', sans-serif;
+    }
+    .glass-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+    }
+    .btn-gold {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      color: #050d08;
+      box-shadow: 0 8px 25px -4px rgba(245, 158, 11, 0.35);
+    }
+    ::-webkit-scrollbar { height: 5px; width: 5px; }
+    ::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); }
+    ::-webkit-scrollbar-thumb { background: rgba(245, 158, 11, 0.4); border-radius: 99px; }
+  </style>
+</head>
+<body class="min-h-screen p-4 sm:p-6 lg:p-8 selection:bg-amber-400 selection:text-black">
+
+  <div class="max-w-7xl mx-auto space-y-6">
+
+    <!-- Header Panel -->
+    <header class="glass-card rounded-[2.5rem] p-6 sm:p-8 flex flex-col md:flex-row items-start md:items-center justify-between gap-6 shadow-2xl relative overflow-hidden border border-white/10">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2.5">
+          <span class="w-3 h-3 rounded-full bg-amber-400 animate-pulse"></span>
+          <span class="text-xs uppercase font-mono tracking-widest text-amber-400 font-bold">Kitchen Command Center</span>
+        </div>
+        <h1 class="text-2xl sm:text-3xl font-black font-heading text-white tracking-tight">
+          WAHANA <span class="text-amber-400">CAFE</span> STAFF DESK
+        </h1>
+        <p class="text-xs sm:text-sm text-emerald-200/70 font-medium">Real-Time Kitchen Sync & Order Intake Management</p>
+      </div>
+
+      <!-- Store Availability Status Controller -->
+      <div class="flex items-center bg-black/60 p-2 rounded-2xl border border-white/10 shadow-inner w-full sm:w-auto justify-between sm:justify-start">
+        <button onclick="setStoreStatus('accepting')" id="status-btn-accepting" class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200">Accepting</button>
+        <button onclick="setStoreStatus('not_accepting')" id="status-btn-not_accepting" class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200">Paused</button>
+        <button onclick="setStoreStatus('closed')" id="status-btn-closed" class="px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider transition-all duration-200">Closed</button>
+      </div>
+    </header>
+
+    <!-- Navigation Tabs -->
+    <div class="flex gap-3 border-b border-white/10 pb-4 overflow-x-auto">
+      <button onclick="switchTab('orders')" id="tab-btn-orders" class="px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider bg-amber-500 text-black shadow-lg shadow-amber-500/20 transition-all duration-200 flex items-center gap-2.5 shrink-0">
+        📥 Order Intakes & Queue
+      </button>
+      <button onclick="switchTab('menu')" id="tab-btn-menu" class="px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider glass-card text-white hover:border-amber-400 transition-all duration-200 flex items-center gap-2.5 shrink-0">
+        🍔 Menu & Inventory Toggle
+      </button>
+    </div>
+
+    <!-- TAB 1: ORDERS COMMAND QUEUE -->
+    <div id="tab-content-orders" class="space-y-6">
+      
+      <!-- Shift Meta Bar -->
+      <div class="glass-card rounded-3xl p-5 sm:p-6 flex flex-wrap items-center justify-between gap-4 shadow-xl border border-white/10">
+        <div class="flex flex-wrap items-center gap-6 text-xs sm:text-sm">
+          <div>
+            <span class="text-white/50 block text-[11px] uppercase font-bold tracking-wider mb-1">Shift Leader</span>
+            <input type="text" id="shift-leader" value="Archie" class="bg-black/60 border border-white/15 rounded-xl px-3.5 py-2 text-amber-300 font-bold focus:outline-none focus:border-amber-400">
+          </div>
+          <div>
+            <span class="text-white/50 block text-[11px] uppercase font-bold tracking-wider mb-1">Shift Date</span>
+            <input type="date" id="shift-date" class="bg-black/60 border border-white/15 rounded-xl px-3.5 py-2 text-white font-medium focus:outline-none focus:border-amber-400">
+          </div>
+        </div>
+        <button onclick="confirmResetShift()" class="bg-red-500/10 hover:bg-red-500 text-red-300 hover:text-white border border-red-500/20 font-black text-xs px-5 py-3 rounded-2xl transition-all duration-200">
+          🔄 Reset Shift / Clear Queue
+        </button>
+      </div>
+
+      <!-- Live Dashboard Metrics -->
+      <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="glass-card p-5 sm:p-6 rounded-3xl shadow-xl space-y-1">
+          <span class="text-xs text-white/50 font-bold uppercase tracking-wider">Total Cash Collected</span>
+          <span id="metric-total-cash" class="text-2xl sm:text-3xl font-black font-heading text-emerald-400">₱0.00</span>
+        </div>
+        <div class="glass-card p-5 sm:p-6 rounded-3xl shadow-xl space-y-1">
+          <span class="text-xs text-white/50 font-bold uppercase tracking-wider">Completed Orders</span>
+          <span id="metric-completed-count" class="text-2xl sm:text-3xl font-black font-heading text-amber-400">0</span>
+        </div>
+        <div class="glass-card p-5 sm:p-6 rounded-3xl shadow-xl space-y-1">
+          <span class="text-xs text-white/50 font-bold uppercase tracking-wider">Active Orders</span>
+          <span id="metric-active-count" class="text-2xl sm:text-3xl font-black font-heading text-blue-400">0</span>
+        </div>
+        <div class="glass-card p-5 sm:p-6 rounded-3xl shadow-xl space-y-1">
+          <span class="text-xs text-white/50 font-bold uppercase tracking-wider">Total Received</span>
+          <span id="metric-total-received" class="text-2xl sm:text-3xl font-black font-heading text-purple-400">0</span>
+        </div>
+      </div>
+
+      <!-- Active Orders Dynamic Grid -->
+      <main class="space-y-4">
+        <div class="flex items-center justify-between">
+          <h2 class="text-xl font-black font-heading text-amber-300">Active Orders Queue</h2>
+          <span class="text-xs text-white/40 font-medium">Auto-synced with customer website</span>
+        </div>
+        <div id="orders-queue" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+          <!-- Rendered dynamically -->
+        </div>
+      </main>
+
+    </div>
+
+    <!-- TAB 2: MENU INVENTORY MANAGEMENT -->
+    <div id="tab-content-menu" class="space-y-6 hidden">
+      <section class="glass-card rounded-3xl p-6 sm:p-8 shadow-xl space-y-6 border border-white/10">
+        <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-4 border-b border-white/10 pb-5">
+          <div>
+            <h2 class="text-xl font-black font-heading text-amber-300">Live Menu Availability Stock Toggles</h2>
+            <p class="text-xs text-white/60 mt-0.5">Toggling an item instantly updates customer ordering availability.</p>
+          </div>
+          <div class="flex gap-2.5">
+            <button onclick="bulkToggleStock(true)" class="bg-emerald-500/15 hover:bg-emerald-500 text-emerald-300 hover:text-black border border-emerald-500/30 font-bold text-xs px-4 py-2.5 rounded-xl transition">Enable All</button>
+            <button onclick="bulkToggleStock(false)" class="bg-red-500/15 hover:bg-red-500 text-red-300 hover:text-white border border-red-500/30 font-bold text-xs px-4 py-2.5 rounded-xl transition">Disable All</button>
+          </div>
+        </div>
+        <div id="menu-stock-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          <!-- Rendered dynamically -->
+        </div>
+      </section>
+    </div>
+
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://ovnrgbqbfpebqjparxyq.supabase.co";
+    const SUPABASE_KEY = "sb_publishable_LY5jsImbX5WCF8ZoWwXXPA_xWTRjQqj";
+    const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let allOrders = [];
+    let menuItems = [];
+
+    function switchTab(tab) {
+      const ordersTab = document.getElementById('tab-content-orders');
+      const menuTab = document.getElementById('tab-content-menu');
+      const ordersBtn = document.getElementById('tab-btn-orders');
+      const menuBtn = document.getElementById('tab-btn-menu');
+
+      if (tab === 'orders') {
+        ordersTab.classList.remove('hidden');
+        menuTab.classList.add('hidden');
+        ordersBtn.className = "px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider bg-amber-500 text-black shadow-lg shadow-amber-500/20 transition-all duration-200 flex items-center gap-2.5 shrink-0";
+        menuBtn.className = "px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider glass-card text-white hover:border-amber-400 transition-all duration-200 flex items-center gap-2.5 shrink-0";
+      } else {
+        ordersTab.classList.add('hidden');
+        menuTab.classList.remove('hidden');
+        menuBtn.className = "px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider bg-amber-500 text-black shadow-lg shadow-amber-500/20 transition-all duration-200 flex items-center gap-2.5 shrink-0";
+        ordersBtn.className = "px-6 py-3.5 rounded-2xl font-black text-xs uppercase tracking-wider glass-card text-white hover:border-amber-400 transition-all duration-200 flex items-center gap-2.5 shrink-0";
+      }
+    }
+
+    async function initDashboard() {
+      const today = new Date().toISOString().split('T')[0];
+      const dateEl = document.getElementById('shift-date');
+      if (dateEl) dateEl.value = today;
+
+      await fetchOrders();
+      await fetchStoreStatus();
+      await fetchMenuItems();
+    }
+
+    async function fetchOrders() {
+      try {
+        const { data, error } = await supabaseClient
+          .from('orders')
+          .select('*')
+          .order('created_at', { ascending: false });
+
+        if (!error && data) {
+          allOrders = data;
+          renderOrders();
+          calculateMetrics();
+        }
+      } catch (err) {}
+    }
+
+    async function fetchMenuItems() {
+      try {
+        const { data, error } = await supabaseClient
+          .from('menu_items')
+          .select('*')
+          .order('id');
+
+        if (!error && data && data.length > 0) {
+          menuItems = data;
+        }
+      } catch (err) {}
+      renderMenuStockGrid();
+    }
+
+    function renderMenuStockGrid() {
+      const grid = document.getElementById('menu-stock-grid');
+      if (!grid) return;
+      grid.innerHTML = menuItems.map(item => `
+        <div class="bg-black/40 border border-white/10 rounded-2xl p-4 flex justify-between items-center shadow-md">
+          <div class="pr-2">
+            <span class="text-[10px] text-amber-400 font-bold uppercase tracking-wider block">${item.category}</span>
+            <h4 class="font-bold text-xs text-white mt-0.5">${item.name}</h4>
+            <span class="text-[11px] text-white/50 font-semibold">₱${item.price}</span>
+          </div>
+          <button onclick="toggleItemStock(${item.id}, ${item.is_available === false ? true : false})" class="px-3.5 py-2 rounded-xl text-[11px] font-black uppercase tracking-wider transition-all duration-200 shrink-0 ${item.is_available !== false ? 'bg-emerald-500 text-black hover:bg-emerald-400 shadow-md shadow-emerald-500/20' : 'bg-red-500/20 text-red-300 border border-red-500/40 hover:bg-red-500 hover:text-white'}">
+            ${item.is_available !== false ? 'In Stock' : 'Out of Stock'}
+          </button>
+        </div>
+      `).join('');
+    }
+
+    async function toggleItemStock(id, newStatus) {
+      try {
+        await supabaseClient
+          .from('menu_items')
+          .update({ is_available: newStatus, updated_at: new Date() })
+          .eq('id', id);
+      } catch (err) {}
+      fetchMenuItems();
+    }
+
+    async function bulkToggleStock(status) {
+      for (const item of menuItems) {
+        await supabaseClient.from('menu_items').update({ is_available: status }).eq('id', item.id);
+      }
+      fetchMenuItems();
+    }
+
+    function renderOrders() {
+      const queue = document.getElementById('orders-queue');
+      if (!queue) return;
+      const activeOrders = allOrders.filter(o => o.status !== 'Completed' && o.status !== 'Cancelled');
+
+      if (activeOrders.length === 0) {
+        queue.innerHTML = `
+          <div class="col-span-full glass-card border border-dashed border-white/10 rounded-3xl p-16 text-center text-white/40 font-medium">
+            No active orders in queue. Waiting for customer requests...
+          </div>
+        `;
+        return;
+      }
+
+      queue.innerHTML = activeOrders.map(order => {
+        const readyText = getReadyStatusText(order.order_type);
+        const isPending = order.status === 'Pending';
+        return `
+        <div class="glass-card border ${isPending ? 'border-amber-400 ring-2 ring-amber-400/30' : 'border-white/10'} rounded-3xl p-6 space-y-5 shadow-2xl relative overflow-hidden">
+          <div class="flex justify-between items-start">
+            <div>
+              <span class="text-[11px] font-mono font-black bg-amber-500/20 text-amber-300 px-3 py-1 rounded-xl uppercase tracking-wider border border-amber-500/30">${order.order_type}</span>
+              <h3 class="font-bold text-lg text-white mt-2.5">${order.customer_name}</h3>
+              <p class="text-xs text-white/60 font-medium">${order.contact_number}</p>
+            </div>
+            <div class="flex flex-col items-end gap-2">
+              <span class="text-xs font-mono font-bold text-white/40 bg-black/40 px-2.5 py-1 rounded-lg border border-white/5">#${order.ref_id || order.id.slice(0,6)}</span>
+              <button onclick="printOrderReceipt('${order.id}')" class="bg-amber-500 hover:bg-amber-400 text-black font-black text-xs px-3.5 py-1.5 rounded-xl transition shadow-md flex items-center gap-1.5">
+                🖨️ Print Receipt
+              </button>
+            </div>
+          </div>
+
+          <div class="bg-black/50 p-4 rounded-2xl text-xs space-y-1.5 border border-white/5">
+            ${order.order_type === 'dine-in' ? `<p><strong class="text-amber-300">Table:</strong> ${order.table_number || 'N/A'}</p>` : ''}
+            ${order.order_type === 'take-out' ? `<p><strong class="text-amber-300">Claim Code:</strong> ${order.claim_number || 'N/A'}</p>` : ''}
+            ${order.order_type === 'delivery' ? `<p><strong class="text-amber-300">Address:</strong> ${order.address || 'N/A'}</p>` : ''}
+            <p><strong class="text-amber-300">Kitchen Status:</strong> <span class="${isPending ? 'text-amber-400 animate-pulse' : 'text-emerald-400'} font-black">${order.status}</span></p>
+          </div>
+
+          <div class="space-y-2 border-t border-b border-white/10 py-4 text-xs">
+            ${(order.items || []).map(i => `<div class="flex justify-between font-medium"><span>${i.qty}x ${i.name}</span><span class="font-bold text-amber-300">₱${i.price * i.qty}</span></div>`).join('')}
+            <div class="flex justify-between font-black text-amber-400 text-sm pt-2 border-t border-white/5">
+              <span>Total Amount</span>
+              <span>₱${order.total_amount}</span>
+            </div>
+          </div>
+
+          <div class="space-y-2.5 pt-1">
+            <label class="block text-[10px] font-black text-white/50 uppercase tracking-widest mb-1">Staff Order Actions</label>
+            ${isPending ? `
+              <button onclick="updateOrderStatus('${order.id}', 'Accepted')" class="w-full btn-gold font-black text-xs py-3.5 rounded-2xl transition shadow-lg shadow-amber-500/20 uppercase tracking-wider animate-pulse">
+                ✓ Accept Order Now
+              </button>
+            ` : `
+              <div class="grid grid-cols-2 gap-2">
+                <button onclick="updateOrderStatus('${order.id}', 'Accepted')" class="px-3 py-2.5 rounded-xl text-xs font-bold ${order.status === 'Accepted' ? 'bg-amber-500 text-black' : 'bg-white/10 text-white/70'} hover:bg-amber-400 hover:text-black transition">Accepted</button>
+                <button onclick="updateOrderStatus('${order.id}', 'Preparing')" class="px-3 py-2.5 rounded-xl text-xs font-bold ${order.status === 'Preparing' ? 'bg-amber-500 text-black' : 'bg-white/10 text-white/70'} hover:bg-amber-400 hover:text-black transition">Preparing</button>
+              </div>
+              <button onclick="updateOrderStatus('${order.id}', '${readyText}')" class="w-full px-3 py-3 rounded-xl text-xs font-bold ${order.status === readyText ? 'bg-emerald-500 text-black' : 'bg-emerald-600/30 text-emerald-300 border border-emerald-500/40'} hover:bg-emerald-400 hover:text-black transition">
+                🔔 ${readyText}
+              </button>
+            `}
+            <div class="grid grid-cols-3 gap-2 pt-1">
+              <button onclick="updateOrderStatus('${order.id}', 'Completed')" class="bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs py-2.5 rounded-xl transition shadow-md">
+                ✓ Complete
+              </button>
+              <button onclick="printOrderReceipt('${order.id}')" class="bg-amber-500 hover:bg-amber-400 text-black font-extrabold text-xs py-2.5 rounded-xl transition shadow-md">
+                🖨️ Print
+              </button>
+              <button onclick="updateOrderStatus('${order.id}', 'Cancelled')" class="bg-red-500/10 hover:bg-red-500 text-red-200 hover:text-white border border-red-500/20 font-extrabold text-xs py-2.5 rounded-xl transition">
+                ✕ Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      `;
+      }).join('');
+    }
+
+        // Robust Hybrid Bluetooth / Thermal Print Function (Crash-Proof)
+    async function printOrderReceipt(orderId) {
+      const order = allOrders.find(o => o.id === orderId);
+      if (!order) {
+        alert('Order not found.');
+        return;
+      }
+
+      // Check if Web Bluetooth is available
+      if (navigator.bluetooth && navigator.bluetooth.requestDevice) {
+        try {
+          const device = await navigator.bluetooth.requestDevice({
+            acceptAllDevices: true,
+            optionalServices: [
+              '000018f0-0000-1000-8000-00805f9b34fb', 
+              '49535343-fe7d-4ae5-8fa9-9fafd205e455', 
+              '0000ff00-0000-1000-8000-00805f9b34fb',
+              '000018p0-0000-1000-8000-00805f9b34fb'
+            ]
+          });
+
+          const server = await device.gatt.connect();
+          let characteristic = null;
+          
+          const services = await server.getPrimaryServices();
+          for (const s of services) {
+            try {
+              const chars = await s.getCharacteristics();
+              for (const c of chars) {
+                if (c.properties.write || c.properties.writeWithoutResponse) {
+                  characteristic = c;
+                  break;
+                }
+              }
+              if (characteristic) break;
+            } catch (e) {}
+          }
+
+          if (characteristic) {
+            const encoder = new TextEncoder();
+            let bytes = [];
+
+            // ESC @ (Initialize printer)
+            bytes.push(0x1B, 0x40);
+
+            // Header (Centered, Bold)
+            bytes.push(0x1B, 0x61, 0x01); 
+            bytes.push(0x1B, 0x45, 0x01); 
+            bytes.push(...encoder.encode("WAHANA CAFE BALER\n"));
+            bytes.push(0x1B, 0x45, 0x00); 
+            bytes.push(...encoder.encode("Cabin & Coastal Kitchen\n"));
+            bytes.push(...encoder.encode("--------------------------------\n"));
+
+            // Order Details (Left-aligned)
+            bytes.push(0x1B, 0x61, 0x00); 
+            bytes.push(...encoder.encode(`Order ID: #${order.ref_id || order.id.slice(0,6)}\n`));
+            bytes.push(...encoder.encode(`Date: ${new Date(order.created_at).toLocaleString()}\n`));
+            bytes.push(...encoder.encode(`Customer: ${order.customer_name}\n`));
+            bytes.push(...encoder.encode(`Contact: ${order.contact_number}\n`));
+            bytes.push(...encoder.encode(`Type: ${order.order_type.toUpperCase()}\n`));
+            if(order.table_number) bytes.push(...encoder.encode(`Table: ${order.table_number}\n`));
+            if(order.claim_number) bytes.push(...encoder.encode(`Claim Code: ${order.claim_number}\n`));
+            if(order.address) bytes.push(...encoder.encode(`Address: ${order.address}\n`));
+            bytes.push(...encoder.encode("--------------------------------\n"));
+
+            // Items Table Header
+            bytes.push(...encoder.encode("QTY  ITEM               PRICE\n"));
+            bytes.push(...encoder.encode("--------------------------------\n"));
+
+            // Items list
+            for (const item of (order.items || [])) {
+              let line = `${item.qty.toString().padEnd(5)}${item.name.substring(0, 14).padEnd(16)}₱${(item.price * item.qty)}\n`;
+              bytes.push(...encoder.encode(line));
+            }
+
+            bytes.push(...encoder.encode("--------------------------------\n"));
+            
+            // Total Amount (Bold)
+            bytes.push(0x1B, 0x45, 0x01); 
+            bytes.push(...encoder.encode(`TOTAL AMOUNT: ₱${order.total_amount}\n`));
+            bytes.push(0x1B, 0x45, 0x00); 
+            bytes.push(...encoder.encode("--------------------------------\n"));
+            
+            // Footer (Centered)
+            bytes.push(0x1B, 0x61, 0x01); 
+            bytes.push(...encoder.encode("Thank you for dining with us!\n"));
+            bytes.push(...encoder.encode("Baler, Aurora, Philippines\n\n\n"));
+
+            // Send to Bluetooth Printer in Chunks (Max 512 bytes per write)
+            const data = new Uint8Array(bytes);
+            const chunkSize = 512;
+            for (let i = 0; i < data.length; i += chunkSize) {
+              const chunk = data.slice(i, i + chunkSize);
+              await characteristic.writeValue(chunk);
+            }
+
+            alert("Receipt printed successfully via Bluetooth!");
+            device.gatt.disconnect();
+            return;
+          }
+        } catch (btErr) {
+          console.warn("Bluetooth print skipped or failed, using thermal window fallback:", btErr);
+        }
+      }
+
+      // Automatic Fallback: Clean Thermal Receipt Print Dialog (Crash-proof on all mobile & desktop browsers)
+      const printWindow = window.open('', '_blank', 'width=400,height=600');
+      if (!printWindow) {
+        alert('Please allow popups in your browser to print receipts.');
+        return;
+      }
+
+      printWindow.document.write(`
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Receipt #${order.ref_id || order.id.slice(0,6)}</title>
+          <style>
+            body { font-family: 'Courier New', Courier, monospace; width: 280px; margin: 0 auto; padding: 10px; color: #000; background: #fff; }
+            h2, h3, p { margin: 4px 0; text-align: center; }
+            .center { text-align: center; }
+            .bold { font-weight: bold; }
+            hr { border: none; border-top: 1px dashed #000; margin: 8px 0; }
+            table { width: 100%; border-collapse: collapse; font-size: 12px; }
+            th, td { text-align: left; padding: 2px 0; }
+            .right { text-align: right; }
+          </style>
+        </head>
+        <body>
+          <h2>WAHANA CAFE BALER</h2>
+          <p>Cabin & Coastal Kitchen</p>
+          <hr/>
+          <p class="bold">Order ID: #${order.ref_id || order.id.slice(0,6)}</p>
+          <p>Date: ${new Date(order.created_at).toLocaleString()}</p>
+          <p>Customer: ${order.customer_name}</p>
+          <p>Contact: ${order.contact_number}</p>
+          <p class="bold">Type: ${order.order_type.toUpperCase()}</p>
+          ${order.table_number ? `<p>Table: ${order.table_number}</p>` : ''}
+          ${order.claim_number ? `<p>Claim Code: ${order.claim_number}</p>` : ''}
+          ${order.address ? `<p>Address: ${order.address}</p>` : ''}
+          <hr/>
+          <table>
+            <thead>
+              <tr>
+                <th>Qty</th>
+                <th>Item</th>
+                <th class="right">Price</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(order.items || []).map(i => `
+                <tr>
+                  <td>${i.qty}x</td>
+                  <td>${i.name}</td>
+                  <td class="right">₱${i.price * i.qty}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          <hr/>
+          <h3 class="right">TOTAL: ₱${order.total_amount}</h3>
+          <hr/>
+          <p class="center">Thank you for dining with us!</p>
+          <p class="center">Baler, Aurora, Philippines</p>
+          <script>
+            window.onload = function() {
+              window.print();
+              window.close();
+            }
+          <\/script>
+        </body>
+        </html>
+      `);
+      printWindow.document.close();
+    }
+
+
+    function getReadyStatusText(type) {
+      if (type === 'dine-in') return 'Ready to Serve';
+      if (type === 'take-out') return 'Ready to Claim';
+      return 'Ready to Deliver';
+    }
+
+    async function updateOrderStatus(id, newStatus) {
+      if (newStatus === 'Cancelled' && !confirm("Are you sure you want to cancel this order?")) return;
+      try {
+        await supabaseClient
+          .from('orders')
+          .update({ status: newStatus, updated_at: new Date() })
+          .eq('id', id);
+      } catch (err) {}
+      fetchOrders();
+    }
+
+    function calculateMetrics() {
+      const completed = allOrders.filter(o => o.status === 'Completed');
+      const active = allOrders.filter(o => o.status !== 'Completed' && o.status !== 'Cancelled');
+      const cashTotal = completed.reduce((acc, o) => acc + Number(o.total_amount), 0);
+
+      const cashEl = document.getElementById('metric-total-cash');
+      const compEl = document.getElementById('metric-completed-count');
+      const actEl = document.getElementById('metric-active-count');
+      const recEl = document.getElementById('metric-total-received');
+
+      if (cashEl) cashEl.textContent = `₱${cashTotal.toFixed(2)}`;
+      if (compEl) compEl.textContent = completed.length;
+      if (actEl) actEl.textContent = active.length;
+      if (recEl) recEl.textContent = allOrders.length;
+    }
+
+    async function fetchStoreStatus() {
+      try {
+        const { data } = await supabaseClient.from('store_settings').select('*').eq('id', 1).single();
+        if (data && data.store_status) renderStoreStatusButtons(data.store_status);
+      } catch (err) {}
+    }
+
+    async function setStoreStatus(status) {
+      try {
+        await supabaseClient.from('store_settings').upsert({ id: 1, store_status: status });
+      } catch (err) {}
+      renderStoreStatusButtons(status);
+    }
+
+    function renderStoreStatusButtons(status) {
+      ['accepting', 'not_accepting', 'closed'].forEach(s => {
+        const btn = document.getElementById(`status-btn-${s}`);
+        if (!btn) return;
+        if (s === status || (s === 'accepting' && status === 'OPEN')) {
+          btn.className = "px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider bg-amber-500 text-black shadow-lg shadow-amber-500/20";
+        } else {
+          btn.className = "px-4 py-2.5 rounded-xl text-xs font-black uppercase tracking-wider text-white/50 hover:text-white transition";
+        }
+      });
+    }
+
+    async function confirmResetShift() {
+      if (!confirm("Are you sure you want to reset for the next day shift? This will clear active and completed orders from the queue.")) return;
+
+      try {
+        await supabaseClient.from('orders').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+      } catch (err) {
+        allOrders = [];
+      }
+      
+      const nextDate = new Date();
+      nextDate.setDate(nextDate.getDate() + 1);
+      const dateEl = document.getElementById('shift-date');
+      if (dateEl) dateEl.value = nextDate.toISOString().split('T')[0];
+
+      fetchOrders();
+      alert("Shift reset complete! Orders queue cleared.");
+    }
+
+    initDashboard();
+
+    setInterval(() => {
+      fetchOrders();
+      fetchStoreStatus();
+      fetchMenuItems();
+    }, 3000);
+  </script>
+</body>
+</html>
